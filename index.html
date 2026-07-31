@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Talk Today Speaking Placement</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">TT</div>
+      <div>
+        <h1>Speaking Placement</h1>
+        <div class="sub">Talk Today USA · short speaking check</div>
+      </div>
+    </div>
+
+    <div class="steps" id="stepPills">
+      <div class="step-pill on" data-step="id">1 · You</div>
+      <div class="step-pill" data-step="mic">2 · Mic</div>
+      <div class="step-pill" data-step="task1">3 · Task 1</div>
+      <div class="step-pill" data-step="task2">4 · Task 2</div>
+      <div class="step-pill" data-step="done">5 · Done</div>
+    </div>
+
+    <div id="iframeBanner" class="banner hidden"></div>
+
+    <!-- STEP: Identity -->
+    <section class="card" id="stepIdentity">
+      <h2 style="margin-top:0;font-size:1.05rem">Candidate details</h2>
+      <p class="sub" style="margin-bottom:12px">Confirm your details. Prefills from the written test can still be edited.</p>
+      <div class="row">
+        <div>
+          <label for="studentId">Student ID (optional if new)</label>
+          <input id="studentId" inputmode="numeric" autocomplete="off" placeholder="e.g. 1529">
+        </div>
+        <div>
+          <label for="level">Test level</label>
+          <select id="level">
+            <option value="BEG">Beginner (BEG)</option>
+            <option value="INT">Intermediate (INT)</option>
+            <option value="ADV">Advanced (ADV)</option>
+          </select>
+        </div>
+      </div>
+      <label for="fullName">Full name</label>
+      <input id="fullName" autocomplete="name" placeholder="Your full name">
+      <div class="row">
+        <div>
+          <label for="age">Age</label>
+          <input id="age" inputmode="numeric" placeholder="Age">
+        </div>
+        <div>
+          <label for="phone">WhatsApp number</label>
+          <input id="phone" inputmode="tel" placeholder="WhatsApp">
+        </div>
+      </div>
+      <label for="writtenAttemptId">Written attempt ID (if known)</label>
+      <input id="writtenAttemptId" placeholder="Optional">
+      <button type="button" class="btn btn-primary" id="btnStart">Start speaking test</button>
+      <p class="status" id="idStatus"></p>
+    </section>
+
+    <!-- STEP: Mic check -->
+    <section class="card hidden" id="stepMic">
+      <h2 style="margin-top:0;font-size:1.05rem">Microphone check</h2>
+      <p class="sub">Speak for about five seconds, listen to the recording, then confirm that it is clear. This check is not scored.</p>
+      <div class="timer" id="micTimer">00:00</div>
+      <p class="status" id="micStatus">Starting microphone…</p>
+      <audio id="micPlayback" controls class="hidden"></audio>
+      <div class="btn-row">
+        <button type="button" class="btn btn-primary" id="btnMicRecord">Record check again</button>
+        <button type="button" class="btn btn-ghost hidden" id="btnMicStop">Stop</button>
+      </div>
+      <div class="btn-row hidden" id="micConfirmRow">
+        <button type="button" class="btn btn-ok" id="btnMicOk">I can hear myself clearly</button>
+        <button type="button" class="btn btn-warn" id="btnMicRetry">Try again</button>
+      </div>
+    </section>
+
+    <!-- STEP: Task -->
+    <section class="card hidden" id="stepTask">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <h2 style="margin:0;font-size:1.05rem" id="taskTitle">Task 1</h2>
+        <span class="chip" id="taskChip">BEG</span>
+      </div>
+      <div class="prompt" id="taskPrompt"></div>
+      <div class="btn-row">
+        <button type="button" class="btn btn-ghost" id="btnReadAloud">Read prompt aloud</button>
+        <button type="button" class="btn btn-ghost" id="btnStopAloud">Stop voice</button>
+      </div>
+      <div class="timer prep" id="taskTimer">00:00</div>
+      <p class="status" id="taskStatus">Prepare your answer…</p>
+      <audio id="taskPlayback" controls class="hidden"></audio>
+      <div class="btn-row" id="taskActionRow">
+        <button type="button" class="btn btn-primary" id="btnStartPrep">Start preparation</button>
+      </div>
+      <div class="btn-row hidden" id="taskRecRow">
+        <button type="button" class="btn btn-danger" id="btnStopRec"><span class="rec-dot"></span>Stop recording</button>
+      </div>
+      <div class="btn-row hidden" id="taskAfterRow">
+        <button type="button" class="btn btn-warn" id="btnRerecord">Rerecord once</button>
+        <button type="button" class="btn btn-ok" id="btnKeepUpload">Keep &amp; upload</button>
+      </div>
+    </section>
+
+    <!-- STEP: Done -->
+    <section class="card hidden" id="stepDone">
+      <div class="banner ok">
+        Your speaking test has been submitted. Talk Today staff will confirm your placement.
+      </div>
+      <p class="sub">You can close this page. Do not share this link’s admin view — there isn’t one for students.</p>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="config.js"></script>
+  <script>
+    (function () {
+      var p = new URLSearchParams(window.location.search);
+      var cfg = window.SPE_PUBLIC_CONFIG || {};
+      window.__SPE_EXTERNAL_FRONTEND__ = true;
+      window.__SPE_TOPLEVEL_RUNNER__ = true;
+      window.__SPE_BRIDGE_TOKEN__ = 'bridge_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+      window.__SPE_BOOTSTRAP__ = {
+        version: cfg.version || '1.2.0',
+        appName: 'Talk Today Speaking Placement Engine',
+        webAppUrl: cfg.appsScriptWebAppUrl || '',
+        level: (p.get('level') || 'BEG').toUpperCase(),
+        studentId: p.get('studentId') || '',
+        writtenAttemptId: p.get('writtenAttemptId') || '',
+        fullName: p.get('fullName') || p.get('name') || '',
+        age: p.get('age') || '',
+        phone: p.get('phone') || p.get('whatsapp') || ''
+      };
+    })();
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
