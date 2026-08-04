@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Talk Today · Speaking Hub</title>
+  <meta name="description" content="One-screen dashboard for Speaking Placement — student test, admin, sheets, and tools." />
+  <style>
+    :root {
+      --bg0: #070b16;
+      --bg1: #0c1224;
+      --text: #f4f7ff;
+      --muted: #9aabc8;
+      --line: rgba(160, 190, 255, 0.14);
+      --card: rgba(16, 24, 42, 0.88);
+      --shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Google Sans", "SF Pro Text", system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 420px at 0% -10%, rgba(79, 140, 255, 0.28), transparent 55%),
+        radial-gradient(800px 380px at 100% 0%, rgba(167, 139, 250, 0.22), transparent 50%),
+        radial-gradient(700px 360px at 50% 110%, rgba(61, 214, 140, 0.14), transparent 55%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+    body { padding: 18px 16px 28px; }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    header.top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .logo {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      display: grid; place-items: center;
+      font-size: 1.45rem;
+      background: linear-gradient(135deg, #4f8cff, #8b5cf6 55%, #3dd68c);
+      box-shadow: 0 10px 28px rgba(79, 140, 255, 0.4);
+      flex-shrink: 0;
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+    }
+    .brand p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .search {
+      position: relative;
+      flex: 1 1 220px;
+      max-width: 360px;
+    }
+    .search input {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.35);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 11px 14px 11px 40px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+    .search::before {
+      content: "🔎";
+      position: absolute;
+      left: 13px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+    .search input:focus {
+      border-color: rgba(110, 168, 255, 0.55);
+      box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.15);
+    }
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      background: rgba(0,0,0,0.25);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.12s;
+    }
+    .chip:hover { color: var(--text); filter: brightness(1.08); }
+    .chip.active {
+      color: #fff;
+      border-color: transparent;
+      background: linear-gradient(135deg, #4f8cff, #7a6dff);
+      box-shadow: 0 6px 18px rgba(79, 140, 255, 0.28);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 148px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: var(--card);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      text-decoration: none;
+      color: inherit;
+      overflow: hidden;
+      transition: transform 0.14s ease, border-color 0.14s, box-shadow 0.14s;
+      cursor: pointer;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: var(--accent, #4f8cff);
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255,255,255,0.18);
+      box-shadow: 0 18px 44px rgba(0,0,0,0.42);
+    }
+    .card:active { transform: translateY(-1px) scale(0.99); }
+    .card.hidden { display: none; }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .ico {
+      width: 46px; height: 46px;
+      border-radius: 14px;
+      display: grid; place-items: center;
+      font-size: 1.35rem;
+      background: color-mix(in srgb, var(--accent, #4f8cff) 22%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent, #4f8cff) 40%, transparent);
+      flex-shrink: 0;
+    }
+    .tag {
+      font-size: 0.68rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: color-mix(in srgb, var(--accent, #4f8cff) 90%, #fff);
+      background: color-mix(in srgb, var(--accent, #4f8cff) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent, #4f8cff) 35%, transparent);
+      border-radius: 999px;
+      padding: 4px 8px;
+      white-space: nowrap;
+    }
+    .card h2 {
+      margin: 0;
+      font-size: 1.08rem;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+    .card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 600;
+      line-height: 1.35;
+      flex: 1;
+    }
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: auto;
+    }
+    .open-label {
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: #fff;
+      background: linear-gradient(135deg, var(--accent, #4f8cff), color-mix(in srgb, var(--accent, #4f8cff) 55%, #7a6dff));
+      border-radius: 999px;
+      padding: 7px 12px;
+      box-shadow: 0 6px 16px color-mix(in srgb, var(--accent, #4f8cff) 35%, transparent);
+    }
+    .copy-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.12s;
+    }
+    .copy-btn:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+
+    /* accent themes */
+    .c-student { --accent: #3dd68c; }
+    .c-admin { --accent: #a78bfa; }
+    .c-sheet { --accent: #34d399; }
+    .c-dir { --accent: #22d3ee; }
+    .c-drive { --accent: #f5c542; }
+    .c-script { --accent: #fb923c; }
+    .c-bridge { --accent: #60a5fa; }
+    .c-github { --accent: #e2e8f0; }
+    .c-hub { --accent: #f472b6; }
+    .c-ops { --accent: #94a3b8; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.35fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 820px) {
+      .hero { grid-template-columns: 1fr; }
+    }
+    .hero .card { min-height: 170px; }
+    .hero .card h2 { font-size: 1.28rem; }
+    .hero .ico { width: 54px; height: 54px; font-size: 1.55rem; border-radius: 16px; }
+
+    footer {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+    footer a { color: #9ec0ff; text-decoration: none; font-weight: 800; }
+    footer a:hover { text-decoration: underline; }
+    .toast {
+      position: fixed;
+      bottom: 18px; left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(20, 28, 48, 0.95);
+      border: 1px solid rgba(110,168,255,0.35);
+      color: #dbeafe;
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s;
+      z-index: 50;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .section-label {
+      grid-column: 1 / -1;
+      margin: 6px 0 0;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">
+        <div class="logo">🎙️</div>
+        <div>
+          <h1>Speaking Placement Hub</h1>
+          <p>Talk Today · student test, admin, sheets &amp; tools</p>
+        </div>
+      </div>
+      <div class="search">
+        <input type="search" id="q" placeholder="Search links…  ( / )" autocomplete="off" />
+      </div>
+    </header>
+
+    <div class="chip-row" id="chips"></div>
+
+    <div class="hero" id="hero"></div>
+    <div class="grid" id="grid"></div>
+
+    <footer>
+      <span>Private staff tools · no student scores on the student test</span>
+      <span>
+        <a href="./" id="toTest">← Student test</a>
+        ·
+        <a href="https://jamalmorelli-dev.github.io/talk-today-speaking-placement/dashboard.html">Live dashboard</a>
+      </span>
+    </footer>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    var LINKS = [
+      {
+        id: 'student',
+        cat: 'Core',
+        hero: true,
+        cls: 'c-student',
+        emoji: '🎙️',
+        title: 'Student speaking test',
+        blurb: 'Mic test + BEG / INT / ADV recording. GitHub Pages front end (use this URL).',
+        url: 'https://jamalmorelli-dev.github.io/talk-today-speaking-placement/',
+        tag: 'Primary'
+      },
+      {
+        id: 'admin',
+        cat: 'Core',
+        hero: true,
+        cls: 'c-admin',
+        emoji: '🧑‍⚖️',
+        title: 'Admin review',
+        blurb: 'Queue, play audio, see provisional scores, set final band. Needs ADMIN_TOKEN.',
+        url: 'https://script.google.com/macros/s/AKfycbwDtlHLzb4v6VtGZQGLEm9BRbtX1Nf0LuVz5JGVhcQO-Z3hE0G_Jw_ZFUHP1rrByRcyww/exec?page=admin',
+        tag: 'Staff'
+      },
+      {
+        id: 'sheet',
+        cat: 'Data',
+        cls: 'c-sheet',
+        emoji: '📗',
+        title: 'Engine database sheet',
+        blurb: 'ATTEMPTS · RESPONSES · SCORES · REVIEW_QUEUE · SETTINGS',
+        url: 'https://docs.google.com/spreadsheets/d/1sf9xVuSyVNQUbJ7u35anysMQCb21FXSYWPVxlKcZNU4/edit',
+        tag: 'Sheet'
+      },
+      {
+        id: 'directory',
+        cat: 'Data',
+        cls: 'c-dir',
+        emoji: '👥',
+        title: 'MASTER STUDENT DIRECTORY',
+        blurb: 'Authoritative student lookup — never invent IDs.',
+        url: 'https://docs.google.com/spreadsheets/d/138f6zsWUgXKl8TolFTEBIrXIIHANBx00fSp15MK044c/edit',
+        tag: 'Directory'
+      },
+      {
+        id: 'recordings',
+        cat: 'Data',
+        cls: 'c-drive',
+        emoji: '🎧',
+        title: 'Private recordings',
+        blurb: 'Drive folder for student audio (staff only).',
+        url: 'https://drive.google.com/drive/folders/1XVGXnD2LIodRq89IZytFJJZvQSCmPwJG',
+        tag: 'Drive'
+      },
+      {
+        id: 'script',
+        cat: 'Dev',
+        cls: 'c-script',
+        emoji: '📜',
+        title: 'Apps Script project',
+        blurb: 'Server code, Script Properties, deployments, migrateEvidenceGradingV13.',
+        url: 'https://script.google.com/d/1Uo8oN7HGSpWOOExyFOF51bwkoJZw-7PNSy4fQfEp9mKSyz4qGcGHbCIa/edit',
+        tag: 'Code'
+      },
+      {
+        id: 'bridge',
+        cat: 'Dev',
+        cls: 'c-bridge',
+        emoji: '🌉',
+        title: 'Backend / bridge',
+        blurb: 'Apps Script web app (hidden iframe bridge + admin host).',
+        url: 'https://script.google.com/macros/s/AKfycbwDtlHLzb4v6VtGZQGLEm9BRbtX1Nf0LuVz5JGVhcQO-Z3hE0G_Jw_ZFUHP1rrByRcyww/exec',
+        tag: 'API'
+      },
+      {
+        id: 'github',
+        cat: 'Dev',
+        cls: 'c-github',
+        emoji: '🐙',
+        title: 'GitHub Pages repo',
+        blurb: 'Student front-end source (mic + UI).',
+        url: 'https://github.com/jamalmorelli-dev/talk-today-speaking-placement',
+        tag: 'Repo'
+      },
+      {
+        id: 'hub',
+        cat: 'Tools',
+        cls: 'c-hub',
+        emoji: '🔗',
+        title: 'Talk Today Link Hub',
+        blurb: 'All school tools, apps, and sheets in one place.',
+        url: 'https://script.google.com/macros/s/AKfycbwlPR5RQzDDvE7pSJm4NkxRLtyZH6r3pEglyN2_u5RhAl-FQFif6zoOnaWWRqaLE1WOtw/exec',
+        tag: 'Hub'
+      },
+      {
+        id: 'ops',
+        cat: 'Tools',
+        cls: 'c-ops',
+        emoji: '💻',
+        title: 'Ops kit (this Mac)',
+        blurb: 'Grade watcher installers in Application Support → TalkTodaySpeakingOps',
+        url: '',
+        localPath: '~/Library/Application Support/TalkTodaySpeakingOps',
+        tag: 'Local'
+      }
+    ];
+
+    var filterCat = 'All';
+    var query = '';
+
+    function toast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(function () { t.classList.remove('show'); }, 2200);
+    }
+
+    function copyText(text, label) {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () {
+          toast('Copied ' + (label || 'link'));
+        }).catch(function () {
+          fallbackCopy(text, label);
+        });
+      } else {
+        fallbackCopy(text, label);
+      }
+    }
+
+    function fallbackCopy(text, label) {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); toast('Copied ' + (label || 'link')); }
+      catch (e) { toast('Copy failed'); }
+      document.body.removeChild(ta);
+    }
+
+    function openLocal(path) {
+      copyText(path, 'local path');
+      toast('Local path copied — open in Finder');
+    }
+
+    function matches(item) {
+      if (filterCat !== 'All' && item.cat !== filterCat) return false;
+      if (!query) return true;
+      var q = query.toLowerCase();
+      return [item.title, item.blurb, item.tag, item.cat, item.url, item.localPath || '']
+        .join(' ').toLowerCase().indexOf(q) >= 0;
+    }
+
+    function cardHtml(item, big) {
+      var href = item.url || '#';
+      var openAttr = item.url
+        ? 'href="' + item.url + '" target="_blank" rel="noopener"'
+        : 'href="#" data-local="1" data-path="' + (item.localPath || '') + '"';
+      return (
+        '<a class="card ' + item.cls + (big ? ' hero-card' : '') + '" data-id="' + item.id + '" ' + openAttr + '>' +
+          '<div class="card-top">' +
+            '<div class="ico">' + item.emoji + '</div>' +
+            '<span class="tag">' + item.tag + '</span>' +
+          '</div>' +
+          '<h2>' + item.title + '</h2>' +
+          '<p>' + item.blurb + '</p>' +
+          '<div class="card-actions">' +
+            '<span class="open-label">' + (item.url ? 'Open ↗' : 'Copy path') + '</span>' +
+            '<button type="button" class="copy-btn" data-copy="' +
+              encodeURIComponent(item.url || item.localPath || '') +
+              '" data-label="' + item.title + '">Copy</button>' +
+          '</div>' +
+        '</a>'
+      );
+    }
+
+    function render() {
+      var cats = ['All'];
+      LINKS.forEach(function (l) {
+        if (cats.indexOf(l.cat) < 0) cats.push(l.cat);
+      });
+      document.getElementById('chips').innerHTML = cats.map(function (c) {
+        return '<button type="button" class="chip' + (filterCat === c ? ' active' : '') +
+          '" data-cat="' + c + '">' + c + '</button>';
+      }).join('');
+
+      var visible = LINKS.filter(matches);
+      var heroes = visible.filter(function (l) { return l.hero; });
+      var rest = visible.filter(function (l) { return !l.hero; });
+
+      document.getElementById('hero').innerHTML = heroes.map(function (l) {
+        return cardHtml(l, true);
+      }).join('');
+
+      var byCat = {};
+      rest.forEach(function (l) {
+        if (!byCat[l.cat]) byCat[l.cat] = [];
+        byCat[l.cat].push(l);
+      });
+      var html = '';
+      Object.keys(byCat).forEach(function (cat) {
+        html += '<div class="section-label">' + cat + '</div>';
+        byCat[cat].forEach(function (l) { html += cardHtml(l, false); });
+      });
+      if (!visible.length) {
+        html = '<div class="section-label">No matches</div>';
+      }
+      document.getElementById('grid').innerHTML = html;
+      bind();
+    }
+
+    function bind() {
+      document.querySelectorAll('.chip').forEach(function (btn) {
+        btn.onclick = function () {
+          filterCat = btn.getAttribute('data-cat');
+          render();
+        };
+      });
+      document.querySelectorAll('.copy-btn').forEach(function (btn) {
+        btn.onclick = function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          var text = decodeURIComponent(btn.getAttribute('data-copy') || '');
+          copyText(text, btn.getAttribute('data-label') || 'link');
+        };
+      });
+      document.querySelectorAll('a.card[data-local="1"]').forEach(function (a) {
+        a.onclick = function (e) {
+          e.preventDefault();
+          openLocal(a.getAttribute('data-path') || '');
+        };
+      });
+    }
+
+    document.getElementById('q').addEventListener('input', function (e) {
+      query = e.target.value.trim();
+      render();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        document.getElementById('q').focus();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
