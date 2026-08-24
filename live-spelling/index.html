@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111f">
+<title>TALK TODAY — Live Spelling</title>
+<link rel="preconnect" href="https://unpkg.com">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <section id="home" class="screen on">
+    <div class="shell home-shell">
+      <div class="eyebrow">TALK TODAY USA</div>
+      <h1>LIVE<br>SPELLING</h1>
+      <p class="lede">Teacher on the big screen. Students answer from their phones. Correct + fast wins.</p>
+      <div class="home-actions">
+        <button id="hostBtn" class="primary huge">HOST A CLASS</button>
+        <button id="joinBtn" class="secondary huge">JOIN A CLASS</button>
+      </div>
+      <div class="card compact">
+        <b>No install.</b> Phones use the browser. The teacher's browser is the authoritative clock and scoreboard.
+      </div>
+    </div>
+  </section>
+
+  <section id="hostSetup" class="screen">
+    <div class="shell narrow">
+      <button class="back" data-go="home">← Back</button>
+      <div class="eyebrow">TEACHER</div><h2>Build the round</h2>
+      <div class="card form-grid">
+        <label>Level<select id="level"><option>ALL</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select></label>
+        <label>Words<select id="rounds"><option>5</option><option selected>10</option><option>15</option><option>20</option><option>30</option></select></label>
+        <label>Seconds per word<select id="seconds"><option>8</option><option selected>12</option><option>15</option><option>20</option><option>30</option></select></label>
+        <label>Mode<select id="mode"><option value="everybody">Everybody Counts</option><option value="fastest">Fastest Finger</option><option value="elimination">Last Student Standing</option></select></label>
+      </div>
+      <label class="check"><input id="showDefinition" type="checkbox" checked> Show definition on projector</label>
+      <label class="check"><input id="speedBonus" type="checkbox" checked> Speed affects score</label>
+      <button id="createRoomBtn" class="primary huge">CREATE LIVE ROOM</button>
+    </div>
+  </section>
+
+  <section id="lobby" class="screen">
+    <div class="shell host-shell">
+      <div class="topline"><div><div class="eyebrow">LIVE ROOM</div><div id="roomCodeBig" class="room-code">------</div></div><button id="closeRoomBtn" class="secondary">Close</button></div>
+      <div class="lobby-grid">
+        <div class="card qr-card"><div id="qr"></div><div class="join-url" id="joinUrl"></div></div>
+        <div class="card"><div class="card-title">Students connected <span id="playerCount">0</span></div><div id="lobbyPlayers" class="player-list"></div></div>
+      </div>
+      <button id="startGameBtn" class="primary huge" disabled>START GAME</button>
+      <p class="hint">One connected student is enough to start. Late joiners can enter until the game begins.</p>
+    </div>
+  </section>
+
+  <section id="hostGame" class="screen game-bg">
+    <div class="host-game">
+      <header class="game-header"><div><span class="brand">TALK TODAY</span> <span id="hostRound">1/10</span></div><div id="hostTimer" class="timer">12</div><button id="endGameBtn" class="secondary small">End</button></header>
+      <main class="prompt-area">
+        <div id="statusLine" class="status-line">GET READY</div>
+        <button id="speakBtn" class="speaker" aria-label="Hear word">🔊</button>
+        <div id="definition" class="definition"></div>
+        <div id="answeredCount" class="answered-count">0 answered</div>
+        <div id="revealWord" class="reveal-word"></div>
+      </main>
+      <div id="liveRanks" class="live-ranks"></div>
+      <footer class="host-controls"><button id="nextWordBtn" class="primary" disabled>NEXT WORD</button></footer>
+    </div>
+  </section>
+
+  <section id="joinSetup" class="screen">
+    <div class="shell narrow phone-shell">
+      <button class="back" data-go="home">← Back</button>
+      <div class="eyebrow">STUDENT PHONE</div><h2>Join class</h2>
+      <label>Room code<input id="joinCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="123456"></label>
+      <label>Student name<input id="studentName" maxlength="28" autocomplete="name" placeholder="Your name"></label>
+      <label>Student ID <span class="optional">optional</span><input id="studentId" maxlength="20" inputmode="numeric" placeholder="e.g. 532"></label>
+      <button id="connectBtn" class="primary huge">JOIN</button>
+      <div id="joinError" class="error"></div>
+    </div>
+  </section>
+
+  <section id="studentLobby" class="screen game-bg">
+    <div class="phone-game centered"><div class="eyebrow">YOU'RE IN</div><h2 id="studentLobbyName"></h2><div class="pulse-dot"></div><p>Waiting for teacher…</p><div id="studentLobbyCode" class="room-code small-code"></div></div>
+  </section>
+
+  <section id="studentGame" class="screen game-bg">
+    <div class="phone-game">
+      <header class="student-head"><div id="studentRound">1/10</div><div id="studentScore">0 pts</div></header>
+      <div id="studentState" class="student-state">GET READY</div>
+      <button id="studentSpeak" class="speaker phone-speaker">🔊</button>
+      <form id="answerForm" autocomplete="off">
+        <input id="answerInput" class="answer-input" spellcheck="false" autocorrect="off" autocapitalize="none" disabled placeholder="TYPE IT">
+        <button id="submitAnswerBtn" class="primary submit" disabled>SUBMIT</button>
+      </form>
+      <div id="studentFeedback" class="student-feedback"></div>
+      <div id="studentRank" class="student-rank"></div>
+    </div>
+  </section>
+
+  <section id="results" class="screen game-bg">
+    <div class="shell host-shell"><div class="eyebrow">FINAL RESULTS</div><h2>Leaderboard</h2><div id="finalRanks" class="final-ranks"></div><div class="result-actions"><button id="downloadCsvBtn" class="secondary">Download results CSV</button><button id="playAgainBtn" class="primary">PLAY AGAIN</button></div></div>
+  </section>
+</div>
+<script src="https://unpkg.com/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
