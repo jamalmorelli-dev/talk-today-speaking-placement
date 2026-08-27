@@ -23,10 +23,10 @@ async function decryptEnvelope(text,key){
   return JSON.parse(new TextDecoder().decode(bytes));
 }
 async function loadEncrypted(){
-  const names=['snapshot.000','snapshot.001','snapshot.002','snapshot.003','snapshot.004','snapshot.005','snapshot.006','snapshot.007','snapshot.008','snapshot.009','snapshot.010','snapshot.011'];
+  const names=['snapshot.000','snapshot.001','snapshot.002','snapshot.003','snapshot.004'];
   const rs=await Promise.all(names.map(n=>fetch('./'+n,{cache:'no-store'})));
   for(const r of rs)if(!r.ok)throw new Error('Snapshot file unavailable.');
-  return (await Promise.all(rs.map(r=>r.text()))).join('');
+  let t=(await Promise.all(rs.map(r=>r.text()))).join('');if(!t.endsWith('}'))t+='}';return t;
 }
 function setConnected(on,detail=''){connection.className='connection '+(on?'online':'offline');connection.textContent=on?('Unlocked'+(detail?' · '+detail:'')):'Locked';authCard.hidden=on;workspace.hidden=!on}
 function prepare(rows){return rows.map(x=>({...x,_id:norm(x.id),_name:norm(x.name),_nameTokens:toks(x.name),_aliasTokens:toks(x.aliases),_searchTokens:toks([x.id,x.name,x.phone,x.email,x.currentClass,x.latestInvoice,x.aliases].filter(Boolean).join(' '))}))}
@@ -35,7 +35,7 @@ async function unlock(){
   connectBtn.disabled=true;connectBtn.textContent='Unlocking…';const t=performance.now();
   try{
     const key=await deriveKey(keyText),payload=await decryptEnvelope(await loadEncrypted(),key);
-    meta=payload.meta||{};const fields=payload.fields||[];index=(payload.records||[]).map(row=>Object.fromEntries(fields.map((f,i)=>[f,row[i]??''])));prepared=prepare(index);sessionStorage.setItem('s360_staff_key',keyText);
+    meta=payload.meta||{};const records=payload.records||[];index=records.map(row=>Array.isArray(row)?Object.fromEntries((payload.fields||[]).map((f,i)=>[f,row[i]??''])):row);prepared=prepare(index);sessionStorage.setItem('s360_staff_key',keyText);
     setConnected(true,prepared.length.toLocaleString()+' students');status.textContent=`Ready · ${Math.round(performance.now()-t)}ms · ${meta.buildId||''}`;
     snapshotInfo.innerHTML='';q.focus();
   }catch(e){sessionStorage.removeItem('s360_staff_key');keyText='';authError.textContent='Could not unlock Student 360. Check the staff key.';setConnected(false)}
