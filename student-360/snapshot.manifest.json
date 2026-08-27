@@ -1,0 +1,19 @@
+{
+  "version": 3,
+  "recordCount": 1530,
+  "envelopeChars": 83603,
+  "envelopeSha256": "e4b8d3e4144013639d3dadd16c1b5b24b5ac75ff7ef1c726418a5946d4bd4d0d",
+  "shards": [
+    {"file":"snapshot.v3.000","chars":6000,"sha256":"5fc2ab78182d47aa693101041faa8ee03d70408e651827f42dfe1ce57d8a2aca"},
+    {"file":"snapshot.v3.001","chars":8000,"sha256":"db26c298bdac69a0b789626852c48a93bb815764f37e4046653ff39c452ac784"},
+    {"file":"snapshot.v3.002","chars":8000,"sha256":"261e92e7d1098638c38ea15c3e20291d4d9bbc0e8076467153b5aab8d0ce5c02"},
+    {"file":"snapshot.v3.003","chars":8000,"sha256":"36b6d3842bda5f112ebd342defb802242e18f2fb7780e7092c63a2b04a8e3ff0"},
+    {"file":"snapshot.v3.004","chars":8000,"sha256":"4dd495ec210455f7ee77cbc65531e2faa2cef076c93c2437c5ae38bcde051596"},
+    {"file":"snapshot.v3.005","chars":8000,"sha256":"fae6de6c013732c3bdbe5522667cafd28f84ae7db83e76fdfd175c33ab51d043"},
+    {"file":"snapshot.v3.006","chars":8000,"sha256":"df3349ca120671c1d7027655bf46d6f9286d20fd69833fe7a033934d292e852f"},
+    {"file":"snapshot.v3.007","chars":8000,"sha256":"0b07f3890035ab5da7ead2af2eeb81dce0adfc614879193c8322c0a74a56697d"},
+    {"file":"snapshot.v3.008","chars":8000,"sha256":"dbcab1ef22c7f6204e83cc9a74279d0f075e2346a6e56cbbffb5b5239bffd9d8"},
+    {"file":"snapshot.v3.009","chars":8000,"sha256":"481cba3b778703b0e1755f9e124d49392f3e785684dda7a8edc59f37e4eebfca"},
+    {"file":"snapshot.v3.010","chars":5603,"sha256":"cc474f4587b8045c28ad3108a33303feccdb8ca7bba3a275fae20485ea585abd"}
+  ]
+}
