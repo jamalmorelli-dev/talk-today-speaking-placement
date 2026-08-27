@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Talk Today — Student 360</title>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<main id="app">
+<header class="topbar">
+  <div><div class="eyebrow">TALK TODAY</div><h1>Student 360</h1></div>
+  <div id="connection" class="connection offline">Locked</div>
+</header>
+
+<section id="authCard" class="card auth-card">
+  <h2>Staff access</h2>
+  <p>This secure snapshot is encrypted in the browser. Enter the Student 360 staff key to unlock it. The key is never sent anywhere.</p>
+  <div class="auth-row">
+    <input id="accessKey" type="password" autocomplete="off" placeholder="Student 360 staff access key">
+    <button id="connectBtn">Unlock</button>
+  </div>
+  <div id="authError" class="error-text"></div>
+  <div id="snapshotInfo" class="small muted"></div>
+</section>
+
+<section id="workspace" hidden>
+  <div class="search-row">
+    <div class="search-wrap">
+      <input id="q" autocomplete="off" placeholder="Student name, ID, phone, invoice or class…">
+      <div id="results" class="results" hidden></div>
+    </div>
+    <button id="disconnectBtn" class="secondary">Lock</button>
+    <div id="status" class="status"></div>
+  </div>
+  <div id="view" class="empty">Start typing a student’s name or ID.</div>
+</section>
+</main>
+<script src="./app.js"></script>
+</body>
+</html>
