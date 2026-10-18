@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TALK TODAY USA • Official TOEFL® Microphone Engine</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 18px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      margin-bottom: 8px;
+    }
+    .badge.rec {
+      background: rgba(239, 68, 68, 0.22);
+      color: #fca5a5;
+      animation: pulse 1.1s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.55; }
+    }
+    h1 {
+      font-size: 16px;
+      margin: 0 0 6px;
+      color: #f8fafc;
+    }
+    .sub {
+      font-size: 12px;
+      color: #94a3b8;
+      margin: 0 0 14px;
+      line-height: 1.45;
+    }
+    .timer {
+      font-size: 36px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: #38bdf8;
+      margin: 6px 0;
+    }
+    .timer.live { color: #f87171; }
+    .meter-wrap {
+      width: 100%;
+      height: 12px;
+      background: #0f172a;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 10px 0 14px;
+      border: 1px solid #334155;
+    }
+    .meter-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #10b981, #38bdf8);
+      transition: width 80ms linear;
+    }
+    .btn {
+      width: 100%;
+      padding: 11px 16px;
+      border-radius: 8px;
+      border: 0;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-stop {
+      background: #dc2626;
+      color: #fff;
+    }
+    .btn-stop:hover { background: #b91c1c; }
+    .hidden { display: none !important; }
+    .mic-name {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div id="badge" class="badge">Microphone Connected</div>
+    <h1 id="title">TALK TODAY USA • TOEFL Mic Engine</h1>
+    <p id="status" class="sub">Connecting to your microphone…</p>
+    <div id="timer" class="timer">00:00</div>
+    <div class="meter-wrap"><div id="meterBar" class="meter-bar"></div></div>
+    <button id="btnStop" type="button" class="btn btn-stop hidden">🔴 Stop Recording (Done Speaking)</button>
+    <div id="micName" class="mic-name"></div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  var params = new URLSearchParams(window.location.search || '');
+  var currentCallId = params.get('callId') || 'init';
+  var autostart = params.get('autostart') === '1';
+  var initialMaxSec = Math.max(3, Number(params.get('maxSec')) || 5);
+  var autoClose = params.get('autoclose') === '1';
+
+  var mediaStream = null;
+  var mediaRecorder = null;
+  var audioCtx = null;
+  var analyser = null;
+  var freqData = null;
+  var chunks = [];
+  var tickTimer = null;
+  var startAt = 0;
+  var activeMaxSec = 5;
+  var isRecording = false;
+  var currentMime = '';
+
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return String(Math.max(0, Math.floor(n))).padStart(2, '0'); }
+  function fmt(s) { s = Math.max(0, Math.floor(s)); return pad(Math.floor(s / 60)) + ':' + pad(s % 60); }
+
+  function sendToOpener(payload) {
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage(payload, '*');
+      }
+    } catch (e) {}
+  }
+
+  function preferredMime() {
+    var types = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac', 'audio/ogg'];
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+    for (var i = 0; i < types.length; i++) {
+      if (MediaRecorder.isTypeSupported(types[i])) return types[i];
+    }
+    return '';
+  }
+
+  function setupAnalyser(stream) {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      if (!audioCtx) audioCtx = new Ctx();
+      if (audioCtx.state === 'suspended') audioCtx.resume().catch(function () {});
+      var src = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      src.connect(analyser);
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+    } catch (e) {}
+  }
+
+  function readLevel() {
+    if (!analyser || !freqData) return 15;
+    try {
+      analyser.getByteFrequencyData(freqData);
+      var sum = 0;
+      for (var i = 0; i < freqData.length; i++) sum += freqData[i];
+      var avg = sum / freqData.length;
+      return Math.min(100, Math.round((avg / 128) * 100));
+    } catch (e) {
+      return 15;
+    }
+  }
+
+  function setTracksEnabled(enabled) {
+    if (!mediaStream || !mediaStream.getAudioTracks) return;
+    mediaStream.getAudioTracks().forEach(function (t) {
+      try { t.enabled = !!enabled; } catch (e) {}
+    });
+  }
+
+  function hasLiveStream() {
+    if (!mediaStream || !mediaStream.getAudioTracks) return false;
+    var tracks = mediaStream.getAudioTracks();
+    return tracks.length > 0 && tracks.some(function (t) { return t.readyState === 'live'; });
+  }
+
+  function ensureStream() {
+    if (hasLiveStream()) return Promise.resolve(mediaStream);
+    return navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        channelCount: 1
+      }
+    }).then(function (stream) {
+      mediaStream = stream;
+      setupAnalyser(stream);
+      var tracks = stream.getAudioTracks();
+      var label = (tracks[0] && tracks[0].label) ? tracks[0].label : 'Default Microphone';
+      $('micName').textContent = '🎙️ ' + label;
+      setTracksEnabled(false);
+      sendToOpener({
+        type: 'TT_RECORDER_BRIDGE_READY',
+        ok: true,
+        label: label
+      });
+      return stream;
+    });
+  }
+
+  function stopActiveRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      try { mediaRecorder.stop(); } catch (e) {}
+    }
+  }
+
+  function startRecording(maxSec, callId) {
+    if (isRecording) {
+      stopActiveRecording();
+    }
+    activeMaxSec = Math.max(3, Number(maxSec) || 5);
+    if (callId) currentCallId = callId;
+
+    ensureStream().then(function (stream) {
+      setTracksEnabled(true);
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(function () {});
+      }
+      chunks = [];
+      var mime = preferredMime();
+      try {
+        mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      } catch (e) {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+      currentMime = mediaRecorder.mimeType || mime || 'audio/webm';
+      startAt = Date.now();
+      isRecording = true;
+
+      $('badge').textContent = '🔴 Recording Live';
+      $('badge').className = 'badge rec';
+      $('status').textContent = 'Speak clearly into your microphone now…';
+      $('timer').className = 'timer live';
+      $('timer').textContent = fmt(activeMaxSec);
+      $('btnStop').classList.remove('hidden');
+
+      mediaRecorder.ondataavailable = function (ev) {
+        if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+      };
+
+      mediaRecorder.onerror = function (ev) {
+        clearInterval(tickTimer);
+        isRecording = false;
+        setTracksEnabled(false);
+        $('btnStop').classList.add('hidden');
+        var msg = (ev && ev.error && ev.error.message) ? ev.error.message : 'Recorder error';
+        $('status').textContent = msg;
+        sendToOpener({
+          type: 'TT_RECORDER_RESULT',
+          ok: false,
+          callId: currentCallId,
+          error: msg
+        });
+      };
+
+      mediaRecorder.onstop = function () {
+        clearInterval(tickTimer);
+        isRecording = false;
+        setTracksEnabled(false);
+        $('btnStop').classList.add('hidden');
+        $('meterBar').style.width = '0%';
+        $('badge').textContent = '✅ Audio Captured';
+        $('badge').className = 'badge';
+        $('timer').className = 'timer';
+
+        var duration = Math.max(1, Math.round((Date.now() - startAt) / 1000));
+        var blob = new Blob(chunks, { type: currentMime || 'audio/webm' });
+        if (!blob.size || blob.size < 200) {
+          var emptyMsg = 'Recording was empty. Please speak closer to the microphone and try again.';
+          $('status').textContent = emptyMsg;
+          sendToOpener({
+            type: 'TT_RECORDER_RESULT',
+            ok: false,
+            callId: currentCallId,
+            error: emptyMsg
+          });
+          return;
+        }
+
+        $('status').textContent = 'Sending ' + Math.round(blob.size / 1024) + ' KB recording to TOEFL Simulator…';
+        var reader = new FileReader();
+        reader.onload = function () {
+          var dataUrl = String(reader.result || '');
+          var base64 = dataUrl.indexOf(',') >= 0 ? dataUrl.split(',')[1] : '';
+          sendToOpener({
+            type: 'TT_RECORDER_RESULT',
+            ok: true,
+            callId: currentCallId,
+            base64: base64,
+            mimeType: currentMime || 'audio/webm',
+            duration: duration,
+            size: blob.size
+          });
+          // Also send legacy SPE_POPUP_AUDIO format for full backward compatibility
+          sendToOpener({
+            type: 'SPE_POPUP_AUDIO',
+            ok: true,
+            base64: base64,
+            mimeType: currentMime || 'audio/webm',
+            duration: duration
+          });
+          $('status').textContent = '✅ Saved (' + duration + 's, ' + Math.round(blob.size / 1024) + ' KB)! Standing by for next task…';
+          if (autoClose) {
+            setTimeout(function () { try { window.close(); } catch (e) {} }, 350);
+          }
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      try {
+        mediaRecorder.start(200);
+      } catch (e1) {
+        mediaRecorder.start();
+      }
+
+      sendToOpener({
+        type: 'TT_RECORDER_STARTED',
+        callId: currentCallId,
+        maxSec: activeMaxSec
+      });
+
+      clearInterval(tickTimer);
+      tickTimer = setInterval(function () {
+        var elapsed = (Date.now() - startAt) / 1000;
+        var rem = Math.max(0, Math.ceil(activeMaxSec - elapsed));
+        var lvl = readLevel();
+        $('timer').textContent = fmt(rem);
+        $('meterBar').style.width = Math.max(6, lvl) + '%';
+        sendToOpener({
+          type: 'TT_RECORDER_TICK',
+          callId: currentCallId,
+          elapsed: elapsed,
+          remaining: rem,
+          maxSec: activeMaxSec,
+          level: lvl
+        });
+        if (elapsed >= activeMaxSec && mediaRecorder && mediaRecorder.state !== 'inactive') {
+          stopActiveRecording();
+        }
+      }, 150);
+    }).catch(function (err) {
+      isRecording = false;
+      var errMsg = (err && err.message) ? err.message : 'Microphone access denied.';
+      $('badge').textContent = '⚠️ Mic Blocked';
+      $('status').textContent = errMsg;
+      sendToOpener({
+        type: 'TT_RECORDER_RESULT',
+        ok: false,
+        callId: currentCallId,
+        error: errMsg
+      });
+    });
+  }
+
+  $('btnStop').onclick = function () {
+    stopActiveRecording();
+  };
+
+  window.addEventListener('message', function (ev) {
+    var d = ev && ev.data;
+    if (!d || d.type !== 'TT_RECORDER_CMD') return;
+    if (d.cmd === 'start') {
+      startRecording(d.maxSec || 45, d.callId || ('c_' + Date.now()));
+    } else if (d.cmd === 'stop') {
+      stopActiveRecording();
+    } else if (d.cmd === 'ping') {
+      ensureStream();
+    } else if (d.cmd === 'close') {
+      try {
+        if (mediaStream) mediaStream.getTracks().forEach(function (t) { t.stop(); });
+      } catch (e) {}
+      try { window.close(); } catch (e) {}
+    }
+  });
+
+  // Immediately acquire microphone on open
+  ensureStream().then(function () {
+    if (autostart) {
+      startRecording(initialMaxSec, currentCallId);
+    } else {
+      $('badge').textContent = '✅ Mic Ready';
+      $('status').textContent = 'Microphone connected and standing by for your TOEFL Speaking tasks.';
+    }
+  }).catch(function (err) {
+    $('badge').textContent = '⚠️ Mic Permission Needed';
+    $('status').textContent = (err && err.message) ? err.message : 'Please allow microphone access.';
+  });
+})();
+</script>
+</body>
+</html>
